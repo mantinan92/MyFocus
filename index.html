@@ -303,11 +303,13 @@
   }
   .progress-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--red), #E85A5C);
+    background: var(--red);
     border-radius: 99px;
-    transition: width 0.35s cubic-bezier(.4,0,.2,1);
+    transition: width 0.35s cubic-bezier(.4,0,.2,1), background 0.35s ease;
     min-width: 0;
   }
+  .progress-bar-fill.bar-yellow { background: #C9940A; }
+  .progress-bar-fill.bar-green  { background: #2E7D52; }
   .progress-label { font-size: 12px; font-weight: 600; color: var(--text-soft); white-space: nowrap; }
   .progress-emoji { font-size: 16px; }
 
@@ -409,10 +411,12 @@
   }
   .week-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--red), #E85A5C);
+    background: var(--red);
     border-radius: 99px;
-    transition: width 0.5s cubic-bezier(.4,0,.2,1);
+    transition: width 0.5s cubic-bezier(.4,0,.2,1), background 0.5s ease;
   }
+  .week-bar-fill.bar-yellow { background: #C9940A; }
+  .week-bar-fill.bar-green  { background: #2E7D52; }
 
   .stat-row-grid {
     display: grid;
@@ -463,8 +467,10 @@
     border-radius: 8px;
     padding: 3px 9px;
   }
-  .section-pct-badge.full { background: var(--red); }
-  .section-pct-badge.empty { background: var(--grey-mid); }
+  .section-pct-badge.pct-red    { background: var(--red); }
+  .section-pct-badge.pct-yellow { background: #C9940A; }
+  .section-pct-badge.pct-green  { background: #2E7D52; }
+  .section-pct-badge.empty      { background: var(--grey-mid); }
 
   /* Mini bar inside section card */
   .section-bar-bg {
@@ -473,10 +479,12 @@
   }
   .section-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--red), #E85A5C);
+    background: var(--red);
     border-radius: 99px;
-    transition: width 0.4s ease;
+    transition: width 0.4s ease, background 0.4s ease;
   }
+  .section-bar-fill.bar-yellow { background: #C9940A; }
+  .section-bar-fill.bar-green  { background: #2E7D52; }
 
   /* Sub-section label within section card */
   .sub-label {
@@ -535,6 +543,23 @@
   .empty-state {
     font-size: 13px; color: var(--grey-mid);
     font-style: italic; padding: 4px 0;
+  }
+
+  /* ── READONLY / PAST DAY ── */
+  .day-readonly .mit-text,
+  .day-readonly .task-input { cursor: default; pointer-events: none; color: var(--text-soft); }
+  .day-readonly .mit-check,
+  .day-readonly .task-check,
+  .day-readonly .task-menu-btn,
+  .day-readonly .mit-actions { pointer-events: none; opacity: 0.4; }
+  .day-readonly .mit-check:not(.checked),
+  .day-readonly .task-check:not(.checked) { border-color: var(--grey); }
+  .readonly-banner {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; gap: 7px;
+    background: var(--grey); border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 12px; font-weight: 600; color: var(--text-soft);
   }
 
   /* ── focus ring ── */
@@ -798,7 +823,28 @@ function switchDay(dk) {
 // RENDER DAY
 // ─────────────────────────────────────────
 function renderDay() {
-  const data = getDayData(currentDateKey);
+  const data    = getDayData(currentDateKey);
+  const past    = isPastDay(currentDateKey);
+  const bento   = document.getElementById('bentoGrid');
+
+  // Toggle readonly class on bento grid
+  bento.classList.toggle('day-readonly', past);
+
+  // Add/remove readonly banner
+  let banner = document.getElementById('readonlyBanner');
+  if (past) {
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'readonlyBanner';
+      banner.className = 'readonly-banner';
+      banner.innerHTML = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="3" y="5.5" width="7" height="5.5" rx="1.2" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 5.5V3.8a2 2 0 0 1 4 0V5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Past day — view only`;
+      // Insert as first child of bento
+      bento.insertBefore(banner, bento.firstChild);
+    }
+  } else {
+    if (banner) banner.remove();
+  }
+
   renderMIT(data.mit);
   renderTaskList('shortList', data.short, 'short');
   renderTaskList('maintList', data.maint, 'maint');
@@ -861,6 +907,7 @@ function renderTaskList(listId, tasks, type) {
 // ─────────────────────────────────────────
 function toggleMIT() {
   const data = getDayData(currentDateKey);
+  if (!data.mit.text.trim()) return;
   data.mit.done = !data.mit.done;
   setDayData(currentDateKey, data);
   renderMIT(data.mit);
@@ -876,6 +923,7 @@ function saveMIT() {
 
 function toggleTask(type, index) {
   const data = getDayData(currentDateKey);
+  if (!data[type][index].text.trim()) return;
   data[type][index].done = !data[type][index].done;
   setDayData(currentDateKey, data);
   renderTaskList(type === 'short' ? 'shortList' : 'maintList', data[type], type);
@@ -897,6 +945,23 @@ function clearDay() {
 }
 
 // ─────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────
+function barColorClass(pct) {
+  if (pct >= 85) return 'bar-green';
+  if (pct >= 70) return 'bar-yellow';
+  return '';  // default red via CSS
+}
+
+function isPastDay(dk) {
+  return dk < dateKey(today());
+}
+
+function isFutureDay(dk) {
+  return dk > dateKey(today());
+}
+
+// ─────────────────────────────────────────
 // PROGRESS
 // ─────────────────────────────────────────
 function updateProgress() {
@@ -911,7 +976,9 @@ function updateProgress() {
   const done  = all.filter(Boolean).length;
   const pct   = total ? Math.round((done / total) * 100) : 0;
 
-  document.getElementById('progressFill').style.width = pct + '%';
+  const fill = document.getElementById('progressFill');
+  fill.style.width = pct + '%';
+  fill.className = 'progress-bar-fill ' + barColorClass(pct);
   document.getElementById('progressLabel').textContent = `${done} / ${total || 7}`;
 
   const emojis = ['🎯','🌱','💪','⚡','🔥','🏆','✨'];
@@ -1083,10 +1150,10 @@ function renderWeekSummary() {
     <div class="stat-big-row">
       <div class="stat-big-num">${doneTasks}</div>
       <div class="stat-big-denom">/ ${totalTasks}</div>
-      <div class="stat-big-pct">${overallPct}%</div>
+      <div class="stat-big-pct" style="color:${overallPct>=85?'#2E7D52':overallPct>=70?'#C9940A':'var(--red)'}">${overallPct}%</div>
     </div>
     <div class="week-bar-bg">
-      <div class="week-bar-fill" style="width:${overallPct}%"></div>
+      <div class="week-bar-fill ${barColorClass(overallPct)}" style="width:${overallPct}%"></div>
     </div>
     <div class="stat-row-grid">
       <div class="stat-mini">
@@ -1118,8 +1185,10 @@ function renderWeekSummary() {
     card.className = 'section-card';
 
     let badgeClass = 'section-pct-badge';
-    if (sPct === 100 && sTotal > 0) badgeClass += ' full';
-    else if (sTotal === 0)           badgeClass += ' empty';
+    if (sTotal === 0)       badgeClass += ' empty';
+    else if (sPct >= 85)    badgeClass += ' pct-green';
+    else if (sPct >= 70)    badgeClass += ' pct-yellow';
+    else                    badgeClass += ' pct-red';
 
     card.innerHTML = `
       <div class="section-card-header">
@@ -1130,7 +1199,7 @@ function renderWeekSummary() {
         <div class="${badgeClass}">${sTotal ? sPct + '%' : '—'}</div>
       </div>
       <div class="section-bar-bg">
-        <div class="section-bar-fill" style="width:${sPct}%"></div>
+        <div class="section-bar-fill ${sPct >= 85 ? 'bar-green' : sPct >= 70 ? 'bar-yellow' : ''}" style="width:${sPct}%"></div>
       </div>
 
       <div style="font-size:12px;color:var(--text-soft);margin-bottom:10px;">
