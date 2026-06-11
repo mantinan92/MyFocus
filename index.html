@@ -27,16 +27,6 @@
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  html {
-    scroll-padding-bottom: 120px; /* cushion for keyboard-aware scrolling */
-  }
-
-  /* Give focusable fields breathing room when scrolled into view */
-  textarea, input {
-    scroll-margin-bottom: 120px;
-    scroll-margin-top: 24px;
-  }
-
   body {
     font-family: 'Inter', sans-serif;
     background: var(--cream);
@@ -956,7 +946,7 @@ function renderHeaderDate() {
 // ─────────────────────────────────────────
 // DAY NAV
 // ─────────────────────────────────────────
-function renderDayNav() {
+function renderDayNav(skipScroll) {
   const nav = document.getElementById('dayNav');
   nav.innerHTML = '';
   const todayKey = dateKey(today());
@@ -993,10 +983,17 @@ function renderDayNav() {
 
   updateWeekNavBar();
 
-  setTimeout(() => {
-    const active = nav.querySelector('.active');
-    if (active) active.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
-  }, 50);
+  // Scroll the day-nav strip horizontally only (never move the page vertically).
+  // Skip entirely when called from text entry so the page stays perfectly still.
+  if (!skipScroll) {
+    setTimeout(() => {
+      const active = nav.querySelector('.active');
+      if (active) {
+        const target = active.offsetLeft - (nav.clientWidth / 2) + (active.clientWidth / 2);
+        nav.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+      }
+    }, 50);
+  }
 }
 
 function updateWeekNavBar() {
@@ -1277,7 +1274,7 @@ function saveMIT() {
   const data = getDayData(currentDateKey);
   data.mit.text = document.getElementById('mitText').value;
   setDayData(currentDateKey, data);
-  renderDayNav();
+  renderDayNav(true);
 }
 
 function toggleTask(type, index) {
@@ -1293,7 +1290,7 @@ function saveTask(type, index, value) {
   const data = getDayData(currentDateKey);
   data[type][index].text = value;
   setDayData(currentDateKey, data);
-  renderDayNav();
+  renderDayNav(true);
 }
 
 function clearDay() {
@@ -1583,71 +1580,36 @@ function autoResize(el) {
 }
 
 // ─────────────────────────────────────────
-// MOBILE KEYBOARD SCROLL FIX
+// MOBILE KEYBOARD HANDLING
 // ─────────────────────────────────────────
-// Keep the focused field visible above the on-screen keyboard, with cushion.
+// Goal: when the on-screen keyboard is open and text is being entered, the page
+// must stay exactly where the user scrolled. We do NOT auto-scroll the page on
+// focus, keystroke, or viewport resize. We only add a one-time bottom cushion of
+// scrollable space so the user can manually scroll a low field above the keyboard
+// if they wish — without the page ever jumping on its own.
 (function() {
-  const CUSHION = 24; // px of breathing room between the field and the keyboard
-  let focusedEl = null;
-
-  function keepVisible() {
-    if (!focusedEl) return;
-    const vv = window.visualViewport;
-    if (!vv) {
-      // Fallback for browsers without visualViewport
-      focusedEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      return;
-    }
-    const rect = focusedEl.getBoundingClientRect();
-    // Bottom edge of the area still visible above the keyboard (in layout/client coords)
-    const visibleBottom = vv.offsetTop + vv.height;
-    const visibleTop = vv.offsetTop;
-    // If the field's bottom (plus cushion) is hidden behind the keyboard, scroll down
-    const overlapBottom = rect.bottom + CUSHION - visibleBottom;
-    if (overlapBottom > 0) {
-      window.scrollBy({ top: overlapBottom, behavior: 'smooth' });
-    } else if (rect.top - CUSHION < visibleTop) {
-      // If the field is above the visible area, scroll up
-      window.scrollBy({ top: rect.top - CUSHION - visibleTop, behavior: 'smooth' });
-    }
-  }
+  let keyboardOpen = false;
 
   function applyKeyboardPadding() {
     const vv = window.visualViewport;
     if (!vv) return;
-    // How much of the layout viewport is hidden by the keyboard
+    // How much of the layout viewport is currently hidden by the keyboard
     const hidden = Math.max(0, (window.innerHeight - vv.height - vv.offsetTop));
-    // Add scrollable cushion at the bottom so fields near the page bottom
-    // can be scrolled up above the keyboard.
-    document.body.style.paddingBottom = (40 + hidden + CUSHION) + 'px';
+    const open = hidden > 100; // keyboard considered open
+    if (open && !keyboardOpen) {
+      keyboardOpen = true;
+      // Add scrollable cushion once so low fields can be scrolled into view manually.
+      document.body.style.paddingBottom = (40 + hidden + 24) + 'px';
+    } else if (!open && keyboardOpen) {
+      keyboardOpen = false;
+      document.body.style.paddingBottom = '40px';
+    }
   }
 
-  document.addEventListener('focusin', function(e) {
-    const el = e.target;
-    if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
-      focusedEl = el;
-      // Wait for the keyboard animation to settle, then position the field
-      setTimeout(() => { applyKeyboardPadding(); keepVisible(); }, 300);
-    }
-  }, true);
-
-  document.addEventListener('focusout', function(e) {
-    const el = e.target;
-    if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
-      focusedEl = null;
-      // Reset bottom padding once the keyboard closes
-      setTimeout(() => {
-        if (!focusedEl) document.body.style.paddingBottom = '40px';
-      }, 300);
-    }
-  }, true);
-
   if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', function() {
-      applyKeyboardPadding();
-      keepVisible();
-    });
-    window.visualViewport.addEventListener('scroll', keepVisible);
+    // Only react to the keyboard opening/closing (resize), never to scroll,
+    // and never move the page ourselves.
+    window.visualViewport.addEventListener('resize', applyKeyboardPadding);
   }
 })();
 
