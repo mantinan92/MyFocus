@@ -27,6 +27,16 @@
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+  html {
+    scroll-padding-bottom: 120px; /* cushion for keyboard-aware scrolling */
+  }
+
+  /* Give focusable fields breathing room when scrolled into view */
+  textarea, input {
+    scroll-margin-bottom: 120px;
+    scroll-margin-top: 24px;
+  }
+
   body {
     font-family: 'Inter', sans-serif;
     background: var(--cream);
@@ -1575,19 +1585,70 @@ function autoResize(el) {
 // ─────────────────────────────────────────
 // MOBILE KEYBOARD SCROLL FIX
 // ─────────────────────────────────────────
-// Prevent scroll-to-top when virtual keyboard opens on mobile
+// Keep the focused field visible above the on-screen keyboard, with cushion.
 (function() {
-  let scrollY = 0;
+  const CUSHION = 24; // px of breathing room between the field and the keyboard
+  let focusedEl = null;
+
+  function keepVisible() {
+    if (!focusedEl) return;
+    const vv = window.visualViewport;
+    if (!vv) {
+      // Fallback for browsers without visualViewport
+      focusedEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      return;
+    }
+    const rect = focusedEl.getBoundingClientRect();
+    // Bottom edge of the area still visible above the keyboard (in layout/client coords)
+    const visibleBottom = vv.offsetTop + vv.height;
+    const visibleTop = vv.offsetTop;
+    // If the field's bottom (plus cushion) is hidden behind the keyboard, scroll down
+    const overlapBottom = rect.bottom + CUSHION - visibleBottom;
+    if (overlapBottom > 0) {
+      window.scrollBy({ top: overlapBottom, behavior: 'smooth' });
+    } else if (rect.top - CUSHION < visibleTop) {
+      // If the field is above the visible area, scroll up
+      window.scrollBy({ top: rect.top - CUSHION - visibleTop, behavior: 'smooth' });
+    }
+  }
+
+  function applyKeyboardPadding() {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    // How much of the layout viewport is hidden by the keyboard
+    const hidden = Math.max(0, (window.innerHeight - vv.height - vv.offsetTop));
+    // Add scrollable cushion at the bottom so fields near the page bottom
+    // can be scrolled up above the keyboard.
+    document.body.style.paddingBottom = (40 + hidden + CUSHION) + 'px';
+  }
+
   document.addEventListener('focusin', function(e) {
     const el = e.target;
     if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
-      scrollY = window.scrollY;
-      // After keyboard opens (delayed), scroll the element into view
-      setTimeout(() => {
-        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      }, 350);
+      focusedEl = el;
+      // Wait for the keyboard animation to settle, then position the field
+      setTimeout(() => { applyKeyboardPadding(); keepVisible(); }, 300);
     }
   }, true);
+
+  document.addEventListener('focusout', function(e) {
+    const el = e.target;
+    if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
+      focusedEl = null;
+      // Reset bottom padding once the keyboard closes
+      setTimeout(() => {
+        if (!focusedEl) document.body.style.paddingBottom = '40px';
+      }, 300);
+    }
+  }, true);
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', function() {
+      applyKeyboardPadding();
+      keepVisible();
+    });
+    window.visualViewport.addEventListener('scroll', keepVisible);
+  }
 })();
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closePopover(); });
