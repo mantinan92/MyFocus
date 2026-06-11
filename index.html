@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
 <title>My Focus</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -66,32 +66,35 @@
     line-height: 1.3;
   }
 
-  /* ── TAB BAR ── */
-  .tab-bar {
+  /* ── WEEK NAV BAR ── */
+  .week-nav-bar {
     display: flex;
-    gap: 4px;
-    padding: 14px 16px 0;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px 0;
+    gap: 8px;
   }
-  .tab-btn {
+  .week-nav-arrow {
+    width: 36px; height: 36px;
+    border-radius: 10px; border: 1.5px solid var(--grey);
+    background: var(--white); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--navy); font-size: 18px;
+    transition: all 0.15s; font-family: 'Inter', sans-serif;
+    flex-shrink: 0;
+    box-shadow: var(--shadow);
+  }
+  .week-nav-arrow:hover:not(:disabled) { border-color: var(--red); color: var(--red); }
+  .week-nav-arrow:disabled { opacity: 0.35; cursor: default; }
+  .week-nav-label {
+    font-size: 13px; font-weight: 600;
+    color: var(--text); text-align: center;
     flex: 1;
-    padding: 9px 0;
-    border-radius: 12px;
-    border: 1.5px solid transparent;
     background: var(--white);
-    font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-soft);
-    cursor: pointer;
-    transition: all 0.18s;
-    letter-spacing: 0.03em;
+    border-radius: 10px;
+    padding: 8px 10px;
+    box-shadow: var(--shadow);
   }
-  .tab-btn.active {
-    background: var(--navy);
-    border-color: var(--navy);
-    color: #fff;
-  }
-  .tab-btn:not(.active):hover { border-color: var(--red); color: var(--red); }
 
   /* ── VIEWS ── */
   .view { display: none; }
@@ -129,6 +132,8 @@
   .day-btn.active { background: var(--navy); border-color: var(--navy); }
   .day-btn.active .d-label,
   .day-btn.active .d-num { color: #fff; }
+  .day-btn.is-today-inactive { background: #c8d3e8; } /* light navy-gray for today when not selected */
+  .day-btn.is-past { background: #e8e8e8; } /* light gray for past dates */
   .day-btn:not(.active):hover { border-color: var(--red); }
   .day-btn.has-tasks .d-num::after {
     content: '·'; color: var(--red);
@@ -325,13 +330,7 @@
   /* ── FOOTER ── */
   .app-footer {
     padding: 20px 16px 0;
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .streak-chip {
-    display: flex; align-items: center; gap: 5px;
-    background: var(--white); border-radius: 20px;
-    padding: 6px 12px; box-shadow: var(--shadow);
-    font-size: 12px; font-weight: 600; color: var(--navy);
+    display: flex; justify-content: flex-end; align-items: center;
   }
   .clear-btn {
     font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
@@ -660,9 +659,11 @@
   <div class="header-date" id="headerDate"></div>
 </header>
 
-<!-- TAB BAR (no Weekly Summary tab — it lives on Saturday) -->
-<div class="tab-bar">
-  <button class="tab-btn active" id="tabToday" onclick="switchTab('today')">Today</button>
+<!-- Week nav bar -->
+<div class="week-nav-bar" id="weekNavBar">
+  <button class="week-nav-arrow" id="weekPrevBtn" onclick="shiftWeek(-1)" aria-label="Previous week">&#8592;</button>
+  <div class="week-nav-label" id="weekNavLabel"></div>
+  <button class="week-nav-arrow" id="weekNextBtn" onclick="shiftWeek(1)" aria-label="Next week">&#8594;</button>
 </div>
 
 <!-- ══ TODAY VIEW ══ -->
@@ -726,7 +727,6 @@
 
   <!-- FOOTER -->
   <footer class="app-footer">
-    <div class="streak-chip">🔥 <span id="streakCount">0</span> day streak</div>
     <button class="clear-btn" onclick="clearDay()">Reset day</button>
   </footer>
 
@@ -790,16 +790,32 @@ function diffDays(dkA, dkB) {
   return Math.round((dateFromKey(dkB) - dateFromKey(dkA)) / 86400000);
 }
 
-function getWeekDates() {
-  // Show 7 days: today plus next 6 days
-  const days = [];
+// Week offset: 0 = current week (containing today), -1 = last week, +1 = next, +2 = two ahead
+// Weeks run Sun–Sat. Range: -1 to +2
+let dayNavWeekOffset = 0;
+
+function getSundayOfWeek(d) {
+  const s = new Date(d);
+  s.setDate(d.getDate() - d.getDay()); // go back to Sunday
+  s.setHours(0,0,0,0);
+  return s;
+}
+
+function getWeekDatesForOffset(offset) {
   const base = today();
+  const sunday = getSundayOfWeek(base);
+  sunday.setDate(sunday.getDate() + offset * 7);
+  const days = [];
   for (let i = 0; i < 7; i++) {
-    const d = new Date(base);
-    d.setDate(base.getDate() + i);
+    const d = new Date(sunday);
+    d.setDate(sunday.getDate() + i);
     days.push(d);
   }
   return days;
+}
+
+function getWeekDates() {
+  return getWeekDatesForOffset(dayNavWeekOffset);
 }
 
 // Returns up to N future business days (Mon–Fri) from a given date key
@@ -913,7 +929,6 @@ function setDayData(dk, data) {
 // ─────────────────────────────────────────
 function switchTab(tab) {
   currentTab = tab;
-  document.getElementById('tabToday').classList.toggle('active', tab === 'today');
   document.getElementById('viewToday').classList.toggle('active', tab === 'today');
   document.getElementById('viewWeek').classList.toggle('active',  tab === 'week');
   if (tab === 'week') renderWeekSummary();
@@ -934,13 +949,29 @@ function renderHeaderDate() {
 function renderDayNav() {
   const nav = document.getElementById('dayNav');
   nav.innerHTML = '';
-  getWeekDates().forEach(d => {
+  const todayKey = dateKey(today());
+  const weekDays = getWeekDates();
+
+  weekDays.forEach(d => {
     const dk  = dateKey(d);
     const isSat = d.getDay() === 6;
+    const isActive = dk === currentDateKey;
+    const isPast = dk < todayKey;
+    const isToday = dk === todayKey;
+
     const btn = document.createElement('button');
-    btn.className = 'day-btn' + (dk === currentDateKey ? ' active' : '') + (isSat ? ' rest-day' : '');
+    let cls = 'day-btn';
+    if (isActive) {
+      cls += ' active';
+    } else if (isToday) {
+      cls += ' is-today-inactive'; // light navy-gray
+    } else if (isPast) {
+      cls += ' is-past'; // light gray
+    }
+    if (isSat) cls += ' rest-day';
+    btn.className = cls;
     btn.setAttribute('aria-label', `${DAY_NAMES[d.getDay()]} ${d.getDate()}${isSat ? ' (rest day)' : ''}`);
-    btn.setAttribute('aria-pressed', dk === currentDateKey ? 'true' : 'false');
+    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     const dd = loadData('day_' + dk);
     const hasData = !isSat && dd && (dd.mit?.text || dd.short?.some(t=>t.text) || dd.maint?.some(t=>t.text));
     if (hasData) btn.classList.add('has-tasks');
@@ -949,14 +980,40 @@ function renderDayNav() {
     btn.onclick = () => switchDay(dk);
     nav.appendChild(btn);
   });
+
+  updateWeekNavBar();
+
   setTimeout(() => {
     const active = nav.querySelector('.active');
     if (active) active.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
   }, 50);
 }
 
+function updateWeekNavBar() {
+  const days = getWeekDatesForOffset(dayNavWeekOffset);
+  const sun = days[0], sat = days[6];
+  const fmtShort = d => `${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
+  document.getElementById('weekNavLabel').textContent = `${fmtShort(sun)} – ${fmtShort(sat)}`;
+  document.getElementById('weekPrevBtn').disabled = dayNavWeekOffset <= -1;
+  document.getElementById('weekNextBtn').disabled = dayNavWeekOffset >= 2;
+}
+
+function shiftWeek(delta) {
+  const newOffset = dayNavWeekOffset + delta;
+  if (newOffset < -1 || newOffset > 2) return;
+  dayNavWeekOffset = newOffset;
+  renderDayNav();
+}
+
 function switchDay(dk) {
   currentDateKey = dk;
+  // Ensure dayNavWeekOffset corresponds to the week containing dk
+  const todaySun = getSundayOfWeek(today());
+  const dSun = getSundayOfWeek(dateFromKey(dk));
+  const diffWeeks = Math.round((dSun - todaySun) / (7 * 86400000));
+  if (diffWeeks !== dayNavWeekOffset) {
+    dayNavWeekOffset = Math.max(-1, Math.min(2, diffWeeks));
+  }
   renderDayNav();
   if (isSaturday(dk)) {
     renderSaturdayView();
@@ -984,19 +1041,19 @@ function renderSaturdayView() {
 
   // Use the week that contains this Saturday
   const satDate = dateFromKey(currentDateKey);
-  // Find Monday of that week
-  const monday = new Date(satDate);
-  monday.setDate(satDate.getDate() - 5); // Sat - 5 = Mon
+  // Find Sunday of that week (Saturday is day 6, so Sunday is sat - 6)
+  const sunday = new Date(satDate);
+  sunday.setDate(satDate.getDate() - 6); // Sat - 6 = Sun
 
   const days = [];
-  for (let i = 0; i < 5; i++) { // Mon–Fri only
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
+  for (let i = 0; i < 6; i++) { // Sun–Fri only (6 days)
+    const d = new Date(sunday);
+    d.setDate(sunday.getDate() + i);
     days.push(d);
   }
 
   const fmtDate = d => `${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
-  const fri = days[4];
+  const fri = days[5];
 
   let totalTasks = 0, doneTasks = 0;
   const sections = {
@@ -1027,14 +1084,14 @@ function renderSaturdayView() {
       <div class="saturday-icon">☀️</div>
       <div class="saturday-hero-text">
         <div class="saturday-hero-title">Rest Day</div>
-        <div class="saturday-hero-sub">${fmtDate(monday)} – ${fmtDate(fri)} · Week Review</div>
+        <div class="saturday-hero-sub">${fmtDate(sunday)} – ${fmtDate(fri)} · Week Review</div>
       </div>
     </div>
     <div id="weekContent" class="week-view"></div>
   `;
 
   // Reuse existing week summary renderer but populate into this container
-  buildWeekSummaryInto(document.getElementById('weekContent'), days, sections, totalTasks, doneTasks, overallPct, movedCount, monday, fri);
+  buildWeekSummaryInto(document.getElementById('weekContent'), days, sections, totalTasks, doneTasks, overallPct, movedCount, sunday, fri);
 }
 
 function buildWeekSummaryInto(container, days, sections, totalTasks, doneTasks, overallPct, movedCount, monday, fri) {
@@ -1049,7 +1106,7 @@ function buildWeekSummaryInto(container, days, sections, totalTasks, doneTasks, 
     <div class="stat-big-row">
       <div class="stat-big-num">${doneTasks}</div>
       <div class="stat-big-denom">/ ${totalTasks}</div>
-      <div class="stat-big-pct" style="color:${overallPct>=85?'#2E7D52':overallPct>=70?'#C9940A':'var(--red)'}">${overallPct}%</div>
+      <div class="stat-big-pct" style="color:${overallPct>=85?'#2E7D52':overallPct>=50?'#C9940A':'var(--red)'}">${overallPct}%</div>
     </div>
     <div class="week-bar-bg">
       <div class="week-bar-fill ${barColorClass(overallPct)}" style="width:${overallPct}%"></div>
@@ -1072,7 +1129,7 @@ function buildWeekSummaryInto(container, days, sections, totalTasks, doneTasks, 
     let badgeClass = 'section-pct-badge';
     if (sTotal === 0)    badgeClass += ' empty';
     else if (sPct >= 85) badgeClass += ' pct-green';
-    else if (sPct >= 70) badgeClass += ' pct-yellow';
+    else if (sPct >= 50) badgeClass += ' pct-yellow';
     else                 badgeClass += ' pct-red';
 
     const card = document.createElement('div');
@@ -1083,7 +1140,7 @@ function buildWeekSummaryInto(container, days, sections, totalTasks, doneTasks, 
         <div class="${badgeClass}">${sTotal ? sPct + '%' : '—'}</div>
       </div>
       <div class="section-bar-bg">
-        <div class="section-bar-fill ${sPct >= 85 ? 'bar-green' : sPct >= 70 ? 'bar-yellow' : ''}" style="width:${sPct}%"></div>
+        <div class="section-bar-fill ${sPct >= 85 ? 'bar-green' : sPct >= 50 ? 'bar-yellow' : ''}" style="width:${sPct}%"></div>
       </div>
       <div style="font-size:12px;color:var(--text-soft);margin-bottom:10px;">${sDone} of ${sTotal} task${sTotal !== 1 ? 's' : ''} completed</div>
       ${sOpen.length ? `
@@ -1241,7 +1298,7 @@ function clearDay() {
 // ─────────────────────────────────────────
 function barColorClass(pct) {
   if (pct >= 85) return 'bar-green';
-  if (pct >= 70) return 'bar-yellow';
+  if (pct >= 50) return 'bar-yellow';
   return '';  // default red via CSS
 }
 
@@ -1275,26 +1332,6 @@ function updateProgress() {
 
   const emojis = ['🎯','🌱','💪','⚡','🔥','🏆','✨'];
   document.getElementById('progressEmoji').textContent = emojis[Math.min(Math.floor(pct / 17), 6)];
-  updateStreak();
-}
-
-// ─────────────────────────────────────────
-// STREAK
-// ─────────────────────────────────────────
-function updateStreak() {
-  let streak = 0;
-  const base = today();
-  for (let i = 0; i < 30; i++) {
-    const d = new Date(base);
-    d.setDate(base.getDate() - i);
-    const dd = loadData('day_' + dateKey(d));
-    if (!dd) break;
-    const allTasks = [dd.mit, ...(dd.short||[]), ...(dd.maint||[])].filter(t => t && t.text);
-    if (allTasks.length === 0) { if (i > 0) break; continue; }
-    if (allTasks.every(t => t.done)) streak++;
-    else if (i > 0) break;
-  }
-  document.getElementById('streakCount').textContent = streak;
 }
 
 // ─────────────────────────────────────────
@@ -1535,12 +1572,31 @@ function autoResize(el) {
   el.style.height = el.scrollHeight + 'px';
 }
 
+// ─────────────────────────────────────────
+// MOBILE KEYBOARD SCROLL FIX
+// ─────────────────────────────────────────
+// Prevent scroll-to-top when virtual keyboard opens on mobile
+(function() {
+  let scrollY = 0;
+  document.addEventListener('focusin', function(e) {
+    const el = e.target;
+    if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
+      scrollY = window.scrollY;
+      // After keyboard opens (delayed), scroll the element into view
+      setTimeout(() => {
+        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }, 350);
+    }
+  }, true);
+})();
+
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closePopover(); });
 
 // ─────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────
 function init() {
+  // dayNavWeekOffset starts at 0 (current week containing today)
   renderHeaderDate();
   renderDayNav();
   if (isSaturday(currentDateKey)) {
