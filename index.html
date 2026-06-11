@@ -135,6 +135,15 @@
     font-size: 22px; line-height: 0;
     vertical-align: -4px; margin-left: 1px;
   }
+  .day-btn.rest-day { opacity: 0.7; }
+  .day-btn.rest-day.active { background: var(--grey-mid); border-color: var(--grey-mid); }
+  .day-btn.rest-day:not(.active):hover { border-color: var(--grey-mid); }
+  .d-rest {
+    font-size: 8px; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--grey-mid);
+    margin-top: 1px;
+  }
+  .day-btn.active .d-rest { color: rgba(255,255,255,0.6); }
 
   /* ── BENTO GRID ── */
   .bento {
@@ -562,6 +571,79 @@
     font-size: 12px; font-weight: 600; color: var(--text-soft);
   }
 
+  /* ── POPOVER MODE TABS ── */
+  .popover-mode-tabs {
+    display: flex; gap: 4px; margin-bottom: 2px;
+  }
+  .popover-mode-tab {
+    flex: 1; padding: 7px 4px;
+    border-radius: 8px; border: 1.5px solid var(--grey);
+    background: transparent; font-size: 12px; font-weight: 600;
+    color: var(--text-soft); cursor: pointer; font-family: 'Inter', sans-serif;
+    transition: all 0.15s;
+  }
+  .popover-mode-tab.active {
+    background: var(--navy); border-color: var(--navy); color: #fff;
+  }
+  .popover-mode-tab:not(.active):hover { border-color: var(--red); color: var(--red); }
+
+  /* Copy multi-select checkboxes */
+  .copy-day-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; border-radius: 9px; cursor: pointer;
+    font-size: 14px; font-weight: 500;
+    transition: background 0.13s;
+    border: 1.5px solid transparent;
+    background: transparent;
+    width: 100%; text-align: left;
+    color: var(--text); font-family: 'Inter', sans-serif;
+  }
+  .copy-day-item:hover { background: var(--navy-light); }
+  .copy-day-item.selected { background: var(--navy-light); border-color: var(--navy); }
+  .copy-day-item .cdi-check {
+    width: 18px; height: 18px; border-radius: 5px;
+    border: 1.5px solid var(--grey-mid); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .copy-day-item.selected .cdi-check { background: var(--navy); border-color: var(--navy); }
+  .copy-day-item .di-day { font-weight: 600; min-width: 28px; }
+  .copy-day-item .di-date { font-size: 12px; color: var(--text-soft); }
+
+  .popover-confirm-btn {
+    width: 100%; margin-top: 8px; padding: 9px;
+    border-radius: 8px; border: none;
+    background: var(--navy); font-size: 13px; font-weight: 600;
+    color: #fff; cursor: pointer; font-family: 'Inter', sans-serif;
+    transition: opacity 0.15s;
+  }
+  .popover-confirm-btn:disabled { opacity: 0.35; cursor: default; }
+  .popover-confirm-btn:not(:disabled):hover { opacity: 0.88; }
+
+  /* ── SATURDAY REST DAY ── */
+  .saturday-view {
+    padding: 12px 16px 0;
+  }
+  .saturday-hero {
+    background: var(--navy);
+    border-radius: var(--radius);
+    padding: 20px 20px 16px;
+    box-shadow: var(--shadow);
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .saturday-icon { font-size: 36px; flex-shrink: 0; }
+  .saturday-hero-text {}
+  .saturday-hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; font-weight: 700; font-style: italic;
+    color: #fff; margin-bottom: 3px;
+  }
+  .saturday-hero-sub {
+    font-size: 12px; font-weight: 500;
+    color: rgba(255,255,255,0.5);
+  }
+
   /* ── focus ring ── */
   :focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 
@@ -578,10 +660,9 @@
   <div class="header-date" id="headerDate"></div>
 </header>
 
-<!-- TAB BAR -->
+<!-- TAB BAR (no Weekly Summary tab — it lives on Saturday) -->
 <div class="tab-bar">
   <button class="tab-btn active" id="tabToday" onclick="switchTab('today')">Today</button>
-  <button class="tab-btn"        id="tabWeek"  onclick="switchTab('week')">Weekly Summary</button>
 </div>
 
 <!-- ══ TODAY VIEW ══ -->
@@ -659,10 +740,27 @@
 <!-- OVERLAY -->
 <div class="overlay" id="overlay" onclick="closePopover()"></div>
 
-<!-- MOVE POPOVER -->
-<div class="move-popover" id="movePopover" role="dialog" aria-label="Move task to day">
-  <div class="move-popover-title">Move to…</div>
-  <div class="move-day-list" id="moveDayList"></div>
+<!-- TASK ACTION POPOVER -->
+<div class="move-popover" id="movePopover" role="dialog" aria-label="Task actions">
+  <!-- Mode selector tabs -->
+  <div class="popover-mode-tabs" id="popoverModeTabs">
+    <button class="popover-mode-tab active" id="modeTabMove" onclick="setPopoverMode('move')">Move</button>
+    <button class="popover-mode-tab" id="modeTabCopy" onclick="setPopoverMode('copy')">Copy to…</button>
+  </div>
+
+  <!-- MOVE panel -->
+  <div id="movePanelInner">
+    <div class="move-popover-title" style="margin-top:8px">Move to future day</div>
+    <div class="move-day-list" id="moveDayList"></div>
+  </div>
+
+  <!-- COPY panel -->
+  <div id="copyPanelInner" style="display:none">
+    <div class="move-popover-title" style="margin-top:8px">Copy to (select days)</div>
+    <div class="move-day-list" id="copyDayList"></div>
+    <button class="popover-confirm-btn" id="copyConfirmBtn" onclick="confirmCopy()">Copy to selected</button>
+  </div>
+
   <button class="popover-close" onclick="closePopover()">Cancel</button>
 </div>
 
@@ -693,14 +791,54 @@ function diffDays(dkA, dkB) {
 }
 
 function getWeekDates() {
+  // Show 7 days: today plus next 6 days
   const days = [];
   const base = today();
-  for (let i = -3; i <= 3; i++) {
+  for (let i = 0; i < 7; i++) {
     const d = new Date(base);
     d.setDate(base.getDate() + i);
     days.push(d);
   }
   return days;
+}
+
+// Returns up to N future business days (Mon–Fri) from a given date key
+function getFutureBusinessDays(fromDk, maxBizDays) {
+  const result = [];
+  const base = dateFromKey(fromDk);
+  let bizCount = 0;
+  let i = 1;
+  while (bizCount < maxBizDays && i <= 30) {
+    const d = new Date(base);
+    d.setDate(base.getDate() + i);
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) { // not Sun or Sat
+      result.push(d);
+      bizCount++;
+    }
+    i++;
+  }
+  return result;
+}
+
+// Returns up to 7 calendar days ahead (any day except Saturday)
+function getFutureCopyDays(fromDk, maxDays) {
+  const result = [];
+  const base = dateFromKey(fromDk);
+  let i = 1;
+  while (result.length < maxDays && i <= 14) {
+    const d = new Date(base);
+    d.setDate(base.getDate() + i);
+    if (d.getDay() !== 6) { // exclude Saturday (rest day)
+      result.push(d);
+    }
+    i++;
+  }
+  return result;
+}
+
+function isSaturday(dk) {
+  return dateFromKey(dk).getDay() === 6;
 }
 
 // Week offset for summary (0 = current Mon–Sun, -1 = last week, etc.)
@@ -724,6 +862,9 @@ function getWeekRange(offset) {
 
 let currentDateKey = dateKey(today());
 let pendingMove    = null;
+let pendingCopy    = null;
+let copySelections = new Set();
+let popoverMode    = 'move';
 let currentTab     = 'today';
 
 // ─────────────────────────────────────────
@@ -773,7 +914,6 @@ function setDayData(dk, data) {
 function switchTab(tab) {
   currentTab = tab;
   document.getElementById('tabToday').classList.toggle('active', tab === 'today');
-  document.getElementById('tabWeek').classList.toggle('active',  tab === 'week');
   document.getElementById('viewToday').classList.toggle('active', tab === 'today');
   document.getElementById('viewWeek').classList.toggle('active',  tab === 'week');
   if (tab === 'week') renderWeekSummary();
@@ -796,14 +936,16 @@ function renderDayNav() {
   nav.innerHTML = '';
   getWeekDates().forEach(d => {
     const dk  = dateKey(d);
+    const isSat = d.getDay() === 6;
     const btn = document.createElement('button');
-    btn.className = 'day-btn' + (dk === currentDateKey ? ' active' : '');
-    btn.setAttribute('aria-label', `${DAY_NAMES[d.getDay()]} ${d.getDate()}`);
+    btn.className = 'day-btn' + (dk === currentDateKey ? ' active' : '') + (isSat ? ' rest-day' : '');
+    btn.setAttribute('aria-label', `${DAY_NAMES[d.getDay()]} ${d.getDate()}${isSat ? ' (rest day)' : ''}`);
     btn.setAttribute('aria-pressed', dk === currentDateKey ? 'true' : 'false');
     const dd = loadData('day_' + dk);
-    const hasData = dd && (dd.mit?.text || dd.short?.some(t=>t.text) || dd.maint?.some(t=>t.text));
+    const hasData = !isSat && dd && (dd.mit?.text || dd.short?.some(t=>t.text) || dd.maint?.some(t=>t.text));
     if (hasData) btn.classList.add('has-tasks');
-    btn.innerHTML = `<span class="d-label">${DAY_NAMES[d.getDay()]}</span><span class="d-num">${d.getDate()}</span>`;
+    const satLabel = isSat ? '<span class="d-rest">REST</span>' : '';
+    btn.innerHTML = `<span class="d-label">${DAY_NAMES[d.getDay()]}</span><span class="d-num">${d.getDate()}</span>${satLabel}`;
     btn.onclick = () => switchDay(dk);
     nav.appendChild(btn);
   });
@@ -816,13 +958,164 @@ function renderDayNav() {
 function switchDay(dk) {
   currentDateKey = dk;
   renderDayNav();
-  renderDay();
+  if (isSaturday(dk)) {
+    renderSaturdayView();
+  } else {
+    renderDay();
+  }
 }
 
 // ─────────────────────────────────────────
 // RENDER DAY
 // ─────────────────────────────────────────
+function renderSaturdayView() {
+  // Hide bento, footer; show Saturday summary panel instead
+  document.getElementById('bentoGrid').style.display = 'none';
+  document.querySelector('.app-footer').style.display = 'none';
+
+  let satView = document.getElementById('saturdayView');
+  if (!satView) {
+    satView = document.createElement('div');
+    satView.id = 'saturdayView';
+    satView.className = 'saturday-view';
+    document.getElementById('viewToday').appendChild(satView);
+  }
+  satView.style.display = 'block';
+
+  // Use the week that contains this Saturday
+  const satDate = dateFromKey(currentDateKey);
+  // Find Monday of that week
+  const monday = new Date(satDate);
+  monday.setDate(satDate.getDate() - 5); // Sat - 5 = Mon
+
+  const days = [];
+  for (let i = 0; i < 5; i++) { // Mon–Fri only
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    days.push(d);
+  }
+
+  const fmtDate = d => `${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
+  const fri = days[4];
+
+  let totalTasks = 0, doneTasks = 0;
+  const sections = {
+    mit:   { label: 'Most Important Task', dotColor: 'var(--red)',  tasks: [] },
+    short: { label: 'Shorter Tasks',       dotColor: 'var(--red)',  tasks: [] },
+    maint: { label: 'Maintenance',         dotColor: 'var(--navy)', tasks: [] },
+  };
+  days.forEach(d => {
+    const dk   = dateKey(d);
+    const data = getDayData(dk);
+    const addTask = (t, sk) => {
+      if (!t.text) return;
+      sections[sk].tasks.push({ ...t, dayKey: dk, moves: t.moves || [] });
+      totalTasks++;
+      if (t.done) doneTasks++;
+    };
+    addTask(data.mit, 'mit');
+    (data.short || []).forEach(t => addTask(t, 'short'));
+    (data.maint || []).forEach(t => addTask(t, 'maint'));
+  });
+
+  const overallPct = totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0;
+  let movedCount = 0;
+  Object.values(sections).forEach(s => s.tasks.forEach(t => { if (t.moves && t.moves.length > 0) movedCount++; }));
+
+  satView.innerHTML = `
+    <div class="saturday-hero">
+      <div class="saturday-icon">☀️</div>
+      <div class="saturday-hero-text">
+        <div class="saturday-hero-title">Rest Day</div>
+        <div class="saturday-hero-sub">${fmtDate(monday)} – ${fmtDate(fri)} · Week Review</div>
+      </div>
+    </div>
+    <div id="weekContent" class="week-view"></div>
+  `;
+
+  // Reuse existing week summary renderer but populate into this container
+  buildWeekSummaryInto(document.getElementById('weekContent'), days, sections, totalTasks, doneTasks, overallPct, movedCount, monday, fri);
+}
+
+function buildWeekSummaryInto(container, days, sections, totalTasks, doneTasks, overallPct, movedCount, monday, fri) {
+  container.innerHTML = '';
+  const fmtDate = d => `${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
+  const undone = totalTasks - doneTasks;
+
+  const hero = document.createElement('div');
+  hero.className = 'stat-hero';
+  hero.innerHTML = `
+    <div class="stat-hero-label"><span class="dot"></span>Week at a Glance</div>
+    <div class="stat-big-row">
+      <div class="stat-big-num">${doneTasks}</div>
+      <div class="stat-big-denom">/ ${totalTasks}</div>
+      <div class="stat-big-pct" style="color:${overallPct>=85?'#2E7D52':overallPct>=70?'#C9940A':'var(--red)'}">${overallPct}%</div>
+    </div>
+    <div class="week-bar-bg">
+      <div class="week-bar-fill ${barColorClass(overallPct)}" style="width:${overallPct}%"></div>
+    </div>
+    <div class="stat-row-grid">
+      <div class="stat-mini"><div class="stat-mini-num">${doneTasks}</div><div class="stat-mini-label">Completed</div></div>
+      <div class="stat-mini"><div class="stat-mini-num">${undone}</div><div class="stat-mini-label">Open</div></div>
+      <div class="stat-mini"><div class="stat-mini-num">${movedCount}</div><div class="stat-mini-label">Moved</div></div>
+    </div>
+  `;
+  container.appendChild(hero);
+
+  Object.entries(sections).forEach(([key, sec]) => {
+    const sTotal = sec.tasks.length;
+    const sDone  = sec.tasks.filter(t => t.done).length;
+    const sPct   = sTotal ? Math.round((sDone / sTotal) * 100) : 0;
+    const sOpen  = sec.tasks.filter(t => !t.done);
+    const sMoved = sec.tasks.filter(t => t.moves && t.moves.length > 0);
+
+    let badgeClass = 'section-pct-badge';
+    if (sTotal === 0)    badgeClass += ' empty';
+    else if (sPct >= 85) badgeClass += ' pct-green';
+    else if (sPct >= 70) badgeClass += ' pct-yellow';
+    else                 badgeClass += ' pct-red';
+
+    const card = document.createElement('div');
+    card.className = 'section-card';
+    card.innerHTML = `
+      <div class="section-card-header">
+        <div class="section-card-title"><span class="dot" style="background:${sec.dotColor}"></span>${sec.label}</div>
+        <div class="${badgeClass}">${sTotal ? sPct + '%' : '—'}</div>
+      </div>
+      <div class="section-bar-bg">
+        <div class="section-bar-fill ${sPct >= 85 ? 'bar-green' : sPct >= 70 ? 'bar-yellow' : ''}" style="width:${sPct}%"></div>
+      </div>
+      <div style="font-size:12px;color:var(--text-soft);margin-bottom:10px;">${sDone} of ${sTotal} task${sTotal !== 1 ? 's' : ''} completed</div>
+      ${sOpen.length ? `
+        <div class="sub-label">Uncompleted</div>
+        <div class="uncomplete-list">
+          ${sOpen.map(t => `<div class="uncomplete-item"><span class="uncomplete-dot"></span><div style="flex:1;min-width:0"><div style="font-size:13px;line-height:1.4">${escapeHtml(t.text)}</div><div class="uncomplete-day">${fmtDayKey(t.dayKey)}</div></div></div>`).join('')}
+        </div>
+      ` : sTotal > 0 ? `<div class="sub-label">Uncompleted</div><div class="empty-state">All completed ✓</div><br>` : ''}
+      ${sMoved.length ? `
+        <div class="sub-label" style="margin-top:${sOpen.length || sTotal === 0 ? '4px' : '0'}">Moved between days</div>
+        <div class="moved-list">
+          ${sMoved.map(t => {
+            const moveCount = t.moves.length;
+            const firstFrom = t.moves[0].from;
+            const lastTo    = t.moves[t.moves.length - 1].to;
+            const span      = Math.abs(diffDays(firstFrom, lastTo));
+            return `<div class="moved-item"><div class="moved-icon">↕</div><div class="moved-item-body"><div class="moved-item-text${t.done ? ' done-text' : ''}">${escapeHtml(t.text)}</div><div class="moved-meta"><span class="moved-chip days">Moved ${moveCount}×</span>${span > 0 ? `<span class="moved-chip days" style="background:var(--navy-light);color:var(--navy)">${span} day${span!==1?'s':''} span</span>` : ''}<span class="moved-chip ${t.done ? 'done' : 'open'}">${t.done ? 'Completed' : 'Still open'}</span></div></div></div>`;
+          }).join('')}
+        </div>
+      ` : sTotal > 0 ? `<div class="sub-label">Moved between days</div><div class="empty-state">No tasks moved</div>` : `<div class="empty-state" style="margin-top:4px">No tasks this section</div>`}
+    `;
+    container.appendChild(card);
+  });
+}
+
 function renderDay() {
+  // Hide Saturday view if switching away
+  const satView = document.getElementById('saturdayView');
+  if (satView) satView.style.display = 'none';
+  document.getElementById('bentoGrid').style.display = '';
+  document.querySelector('.app-footer').style.display = '';
+
   const data    = getDayData(currentDateKey);
   const past    = isPastDay(currentDateKey);
   const bento   = document.getElementById('bentoGrid');
@@ -838,7 +1131,6 @@ function renderDay() {
       banner.id = 'readonlyBanner';
       banner.className = 'readonly-banner';
       banner.innerHTML = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="3" y="5.5" width="7" height="5.5" rx="1.2" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 5.5V3.8a2 2 0 0 1 4 0V5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Past day — view only`;
-      // Insert as first child of bento
       bento.insertBefore(banner, bento.firstChild);
     }
   } else {
@@ -1006,41 +1298,130 @@ function updateStreak() {
 }
 
 // ─────────────────────────────────────────
-// MOVE POPOVER
+// MOVE / COPY POPOVER
 // ─────────────────────────────────────────
+function setPopoverMode(mode) {
+  popoverMode = mode;
+  document.getElementById('modeTabMove').classList.toggle('active', mode === 'move');
+  document.getElementById('modeTabCopy').classList.toggle('active', mode === 'copy');
+  document.getElementById('movePanelInner').style.display  = mode === 'move' ? '' : 'none';
+  document.getElementById('copyPanelInner').style.display  = mode === 'copy' ? '' : 'none';
+}
+
 function showMovePopover(type, event, index) {
   event.stopPropagation();
   pendingMove = { type, index };
+  pendingCopy = { type, index };
+  copySelections.clear();
 
   const popover = document.getElementById('movePopover');
   const overlay = document.getElementById('overlay');
-  const listEl  = document.getElementById('moveDayList');
-  listEl.innerHTML = '';
 
-  getWeekDates().forEach(d => {
+  // --- MOVE list: future business days only, up to 3 ---
+  const moveDayList = document.getElementById('moveDayList');
+  moveDayList.innerHTML = '';
+  const moveDays = getFutureBusinessDays(currentDateKey, 3);
+  if (moveDays.length === 0) {
+    moveDayList.innerHTML = '<div style="font-size:12px;color:var(--grey-mid);padding:6px 10px;">No future business days available</div>';
+  } else {
+    moveDays.forEach(d => {
+      const dk = dateKey(d);
+      const btn = document.createElement('button');
+      btn.className = 'move-day-item';
+      btn.innerHTML = `<span class="di-day">${DAY_NAMES[d.getDay()]}</span>
+        <span class="di-date">${MONTH_NAMES[d.getMonth()]} ${d.getDate()}</span>`;
+      btn.onclick = () => moveTask(dk);
+      moveDayList.appendChild(btn);
+    });
+  }
+
+  // --- COPY list: up to 7 future days (excluding Saturday) ---
+  const copyDayList = document.getElementById('copyDayList');
+  copyDayList.innerHTML = '';
+  const copyDays = getFutureCopyDays(currentDateKey, 7);
+  copyDays.forEach(d => {
     const dk = dateKey(d);
-    const isCurrent = dk === currentDateKey;
-    const btn = document.createElement('button');
-    btn.className = 'move-day-item' + (isCurrent ? ' current' : '');
-    btn.disabled  = isCurrent;
-    btn.innerHTML = `<span class="di-day">${DAY_NAMES[d.getDay()]}</span>
-      <span class="di-date">${MONTH_NAMES[d.getMonth()]} ${d.getDate()}</span>
-      ${isCurrent ? `<span style="font-size:11px;color:var(--grey-mid);margin-left:auto">(current)</span>` : ''}`;
-    if (!isCurrent) btn.onclick = () => moveTask(dk);
-    listEl.appendChild(btn);
+    const item = document.createElement('button');
+    item.className = 'copy-day-item';
+    item.dataset.dk = dk;
+    item.innerHTML = `
+      <span class="cdi-check"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="display:none" id="chk-${dk}">
+        <polyline points="1.5,5 3.8,7.5 8.5,2" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg></span>
+      <span class="di-day">${DAY_NAMES[d.getDay()]}</span>
+      <span class="di-date">${MONTH_NAMES[d.getMonth()]} ${d.getDate()}</span>`;
+    item.onclick = () => toggleCopyDay(dk, item);
+    copyDayList.appendChild(item);
   });
+  updateCopyConfirmBtn();
+
+  // default to move mode
+  setPopoverMode('move');
 
   const rect = event.currentTarget.getBoundingClientRect();
-  const pw = 220;
+  const pw = 230;
   let left = rect.right - pw;
   let top  = rect.bottom + 6;
   if (left < 8) left = 8;
-  if (top + 320 > window.innerHeight) top = rect.top - 320;
+  if (top + 380 > window.innerHeight) top = rect.top - 380;
   popover.style.left  = left + 'px';
   popover.style.top   = top + 'px';
   popover.style.width = pw + 'px';
   popover.classList.add('show');
   overlay.classList.add('show');
+}
+
+function toggleCopyDay(dk, itemEl) {
+  if (copySelections.has(dk)) {
+    copySelections.delete(dk);
+    itemEl.classList.remove('selected');
+    const chk = itemEl.querySelector('svg');
+    if (chk) chk.style.display = 'none';
+  } else {
+    copySelections.add(dk);
+    itemEl.classList.add('selected');
+    const chk = itemEl.querySelector('svg');
+    if (chk) chk.style.display = 'block';
+  }
+  updateCopyConfirmBtn();
+}
+
+function updateCopyConfirmBtn() {
+  const btn = document.getElementById('copyConfirmBtn');
+  const n = copySelections.size;
+  btn.disabled = n === 0;
+  btn.textContent = n === 0 ? 'Copy to selected' : `Copy to ${n} day${n > 1 ? 's' : ''}`;
+}
+
+function confirmCopy() {
+  if (!pendingCopy || copySelections.size === 0) return;
+  const { type, index } = pendingCopy;
+  const srcData = getDayData(currentDateKey);
+
+  copySelections.forEach(targetDk => {
+    const dstData = getDayData(targetDk);
+    const copyRecord = { from: currentDateKey, to: targetDk, action: 'copy' };
+
+    if (type === 'mit') {
+      const task = { ...srcData.mit, moves: [...(srcData.mit.moves||[]), copyRecord], done: false };
+      if (!dstData.mit.text) {
+        dstData.mit = task;
+      } else {
+        const slot = dstData.short.findIndex(t => !t.text);
+        if (slot >= 0) dstData.short[slot] = task;
+      }
+    } else {
+      const task = { ...srcData[type][index], moves: [...(srcData[type][index].moves||[]), copyRecord], done: false };
+      const slot = dstData[type].findIndex(t => !t.text);
+      if (slot >= 0) dstData[type][slot] = task;
+      else           dstData[type][0]    = task;
+    }
+    setDayData(targetDk, dstData);
+  });
+
+  closePopover();
+  renderDay();
+  renderDayNav();
 }
 
 function moveTask(targetDateKey) {
@@ -1080,20 +1461,22 @@ function closePopover() {
   document.getElementById('movePopover').classList.remove('show');
   document.getElementById('overlay').classList.remove('show');
   pendingMove = null;
+  pendingCopy = null;
+  copySelections.clear();
 }
 
 // ─────────────────────────────────────────
-// WEEKLY SUMMARY
+// WEEKLY SUMMARY (used by week view / kept for compatibility)
 // ─────────────────────────────────────────
 function renderWeekSummary() {
   const { days, monday, sunday } = getWeekRange(weekOffset);
   const container = document.getElementById('weekContent');
+  if (!container) return;
   container.innerHTML = '';
 
-  // ── Week selector ──
+  const fmtDate = d => `${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
   const sel = document.createElement('div');
   sel.className = 'week-selector';
-  const fmtDate = d => `${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
   sel.innerHTML = `
     <button class="week-nav-btn" onclick="changeWeek(-1)" aria-label="Previous week">&#8592;</button>
     <div class="week-range-label">${fmtDate(monday)} – ${fmtDate(sunday)}</div>
@@ -1101,155 +1484,31 @@ function renderWeekSummary() {
   `;
   container.appendChild(sel);
 
-  // ── Collect all tasks for the week ──
-  // For each day, gather all tasks with text
-  // movedTasks: tasks that have moves[] length > 0, found anywhere in the week
-  // We'll deduplicate moved tasks by their canonical identity = (originalDay, type, originalText)
-
   let totalTasks = 0, doneTasks = 0;
-
-  // Per-section aggregation
   const sections = {
-    mit:   { label: 'Most Important Task', dotColor: 'var(--red)',  tasks: [], type: 'mit' },
-    short: { label: 'Shorter Tasks',       dotColor: 'var(--red)',  tasks: [], type: 'short' },
-    maint: { label: 'Maintenance',         dotColor: 'var(--navy)', tasks: [], type: 'maint' },
+    mit:   { label: 'Most Important Task', dotColor: 'var(--red)',  tasks: [] },
+    short: { label: 'Shorter Tasks',       dotColor: 'var(--red)',  tasks: [] },
+    maint: { label: 'Maintenance',         dotColor: 'var(--navy)', tasks: [] },
   };
-
   days.forEach(d => {
     const dk   = dateKey(d);
     const data = getDayData(dk);
-
-    const addTask = (t, sectionKey, dayKey) => {
+    const addTask = (t, sk) => {
       if (!t.text) return;
-      sections[sectionKey].tasks.push({ ...t, dayKey, moves: t.moves || [] });
+      sections[sk].tasks.push({ ...t, dayKey: dk, moves: t.moves || [] });
       totalTasks++;
       if (t.done) doneTasks++;
     };
-
-    addTask(data.mit, 'mit', dk);
-    (data.short || []).forEach(t => addTask(t, 'short', dk));
-    (data.maint || []).forEach(t => addTask(t, 'maint', dk));
+    addTask(data.mit, 'mit');
+    (data.short || []).forEach(t => addTask(t, 'short'));
+    (data.maint || []).forEach(t => addTask(t, 'maint'));
   });
 
   const overallPct = totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0;
-  const undone     = totalTasks - doneTasks;
-
-  // Count moved tasks (tasks with at least one move recorded during this week)
   let movedCount = 0;
-  Object.values(sections).forEach(s => {
-    s.tasks.forEach(t => {
-      if (t.moves && t.moves.length > 0) movedCount++;
-    });
-  });
+  Object.values(sections).forEach(s => s.tasks.forEach(t => { if (t.moves && t.moves.length > 0) movedCount++; }));
 
-  // ── Overall hero card ──
-  const hero = document.createElement('div');
-  hero.className = 'stat-hero';
-  hero.innerHTML = `
-    <div class="stat-hero-label"><span class="dot"></span>Week at a Glance</div>
-    <div class="stat-big-row">
-      <div class="stat-big-num">${doneTasks}</div>
-      <div class="stat-big-denom">/ ${totalTasks}</div>
-      <div class="stat-big-pct" style="color:${overallPct>=85?'#2E7D52':overallPct>=70?'#C9940A':'var(--red)'}">${overallPct}%</div>
-    </div>
-    <div class="week-bar-bg">
-      <div class="week-bar-fill ${barColorClass(overallPct)}" style="width:${overallPct}%"></div>
-    </div>
-    <div class="stat-row-grid">
-      <div class="stat-mini">
-        <div class="stat-mini-num">${doneTasks}</div>
-        <div class="stat-mini-label">Completed</div>
-      </div>
-      <div class="stat-mini">
-        <div class="stat-mini-num">${undone}</div>
-        <div class="stat-mini-label">Open</div>
-      </div>
-      <div class="stat-mini">
-        <div class="stat-mini-num">${movedCount}</div>
-        <div class="stat-mini-label">Moved</div>
-      </div>
-    </div>
-  `;
-  container.appendChild(hero);
-
-  // ── Per-section cards ──
-  Object.entries(sections).forEach(([key, sec]) => {
-    const tasksWithText = sec.tasks; // already filtered above
-    const sTotal = tasksWithText.length;
-    const sDone  = tasksWithText.filter(t => t.done).length;
-    const sPct   = sTotal ? Math.round((sDone / sTotal) * 100) : 0;
-    const sOpen  = tasksWithText.filter(t => !t.done);
-    const sMoved = tasksWithText.filter(t => t.moves && t.moves.length > 0);
-
-    const card = document.createElement('div');
-    card.className = 'section-card';
-
-    let badgeClass = 'section-pct-badge';
-    if (sTotal === 0)       badgeClass += ' empty';
-    else if (sPct >= 85)    badgeClass += ' pct-green';
-    else if (sPct >= 70)    badgeClass += ' pct-yellow';
-    else                    badgeClass += ' pct-red';
-
-    card.innerHTML = `
-      <div class="section-card-header">
-        <div class="section-card-title">
-          <span class="dot" style="background:${sec.dotColor}"></span>
-          ${sec.label}
-        </div>
-        <div class="${badgeClass}">${sTotal ? sPct + '%' : '—'}</div>
-      </div>
-      <div class="section-bar-bg">
-        <div class="section-bar-fill ${sPct >= 85 ? 'bar-green' : sPct >= 70 ? 'bar-yellow' : ''}" style="width:${sPct}%"></div>
-      </div>
-
-      <div style="font-size:12px;color:var(--text-soft);margin-bottom:10px;">
-        ${sDone} of ${sTotal} task${sTotal !== 1 ? 's' : ''} completed
-      </div>
-
-      ${sOpen.length ? `
-        <div class="sub-label">Uncompleted</div>
-        <div class="uncomplete-list">
-          ${sOpen.map(t => `
-            <div class="uncomplete-item">
-              <span class="uncomplete-dot"></span>
-              <div style="flex:1;min-width:0">
-                <div style="font-size:13px;line-height:1.4">${escapeHtml(t.text)}</div>
-                <div class="uncomplete-day">${fmtDayKey(t.dayKey)}</div>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      ` : sTotal > 0 ? `<div class="sub-label" style="margin-bottom:8px">Uncompleted</div><div class="empty-state">All completed ✓</div><br>` : ''}
-
-      ${sMoved.length ? `
-        <div class="sub-label" style="margin-top:${sOpen.length || sTotal === 0 ? '4px' : '0'}">Moved between days</div>
-        <div class="moved-list">
-          ${sMoved.map(t => {
-            const moveCount = t.moves.length;
-            // span of days: from first move origin to final resting day
-            const firstFrom = t.moves[0].from;
-            const lastTo    = t.moves[t.moves.length - 1].to;
-            const span      = Math.abs(diffDays(firstFrom, lastTo));
-            return `
-              <div class="moved-item">
-                <div class="moved-icon">↕</div>
-                <div class="moved-item-body">
-                  <div class="moved-item-text${t.done ? ' done-text' : ''}">${escapeHtml(t.text)}</div>
-                  <div class="moved-meta">
-                    <span class="moved-chip days">Moved ${moveCount}×</span>
-                    ${span > 0 ? `<span class="moved-chip days" style="background:var(--navy-light);color:var(--navy)">${span} day${span!==1?'s':''} span</span>` : ''}
-                    <span class="moved-chip ${t.done ? 'done' : 'open'}">${t.done ? 'Completed' : 'Still open'}</span>
-                  </div>
-                </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      ` : sTotal > 0 ? `<div class="sub-label">Moved between days</div><div class="empty-state">No tasks moved</div>` : `<div class="empty-state" style="margin-top:4px">No tasks this section</div>`}
-    `;
-
-    container.appendChild(card);
-  });
+  buildWeekSummaryInto(container, days, sections, totalTasks, doneTasks, overallPct, movedCount, monday, sunday);
 }
 
 function changeWeek(delta) {
@@ -1284,7 +1543,11 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePopover
 function init() {
   renderHeaderDate();
   renderDayNav();
-  renderDay();
+  if (isSaturday(currentDateKey)) {
+    renderSaturdayView();
+  } else {
+    renderDay();
+  }
 }
 init();
 </script>
