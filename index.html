@@ -1182,24 +1182,33 @@ function renderDay() {
 
   const data    = getDayData(currentDateKey);
   const past    = isPastDay(currentDateKey);
+  const locked  = isDayLocked(currentDateKey);
   const bento   = document.getElementById('bentoGrid');
 
-  // Toggle readonly class on bento grid
-  bento.classList.toggle('day-readonly', past);
+  // Toggle readonly class on bento grid (only when actually locked)
+  bento.classList.toggle('day-readonly', locked);
 
-  // Add/remove readonly banner
+  // Add/remove the status banner
   let banner = document.getElementById('readonlyBanner');
-  if (past) {
-    if (!banner) {
-      banner = document.createElement('div');
-      banner.id = 'readonlyBanner';
-      banner.className = 'readonly-banner';
-      banner.innerHTML = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="3" y="5.5" width="7" height="5.5" rx="1.2" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 5.5V3.8a2 2 0 0 1 4 0V5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Past day — view only`;
-      bento.insertBefore(banner, bento.firstChild);
-    }
-  } else {
-    if (banner) banner.remove();
+  if (banner) banner.remove();
+  if (locked) {
+    banner = document.createElement('div');
+    banner.id = 'readonlyBanner';
+    banner.className = 'readonly-banner';
+    banner.innerHTML = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="3" y="5.5" width="7" height="5.5" rx="1.2" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 5.5V3.8a2 2 0 0 1 4 0V5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Past day — view only`;
+    bento.insertBefore(banner, bento.firstChild);
+  } else if (past) {
+    // Past day still within the grace period (editable until noon today)
+    banner = document.createElement('div');
+    banner.id = 'readonlyBanner';
+    banner.className = 'readonly-banner grace';
+    banner.innerHTML = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.4"/><path d="M6.5 3.6V6.7L8.5 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Editable until 3 PM today`;
+    bento.insertBefore(banner, bento.firstChild);
   }
+
+  // Hide the reset button for any past day (locked or in grace window)
+  const clearBtn = document.querySelector('.app-footer .clear-btn');
+  if (clearBtn) clearBtn.style.display = past ? 'none' : '';
 
   renderMIT(data.mit);
   renderTaskList('shortList', data.short, 'short');
@@ -1262,6 +1271,7 @@ function renderTaskList(listId, tasks, type) {
 // TASK MUTATIONS
 // ─────────────────────────────────────────
 function toggleMIT() {
+  if (isDayLocked(currentDateKey)) return;
   const data = getDayData(currentDateKey);
   if (!data.mit.text.trim()) return;
   data.mit.done = !data.mit.done;
@@ -1271,6 +1281,7 @@ function toggleMIT() {
 }
 
 function saveMIT() {
+  if (isDayLocked(currentDateKey)) return;
   const data = getDayData(currentDateKey);
   data.mit.text = document.getElementById('mitText').value;
   setDayData(currentDateKey, data);
@@ -1278,6 +1289,7 @@ function saveMIT() {
 }
 
 function toggleTask(type, index) {
+  if (isDayLocked(currentDateKey)) return;
   const data = getDayData(currentDateKey);
   if (!data[type][index].text.trim()) return;
   data[type][index].done = !data[type][index].done;
@@ -1287,6 +1299,7 @@ function toggleTask(type, index) {
 }
 
 function saveTask(type, index, value) {
+  if (isDayLocked(currentDateKey)) return;
   const data = getDayData(currentDateKey);
   data[type][index].text = value;
   setDayData(currentDateKey, data);
@@ -1294,6 +1307,7 @@ function saveTask(type, index, value) {
 }
 
 function clearDay() {
+  if (isPastDay(currentDateKey)) return;
   if (!confirm('Reset all tasks for this day?')) return;
   setDayData(currentDateKey, emptyDay());
   renderDay();
@@ -1315,6 +1329,17 @@ function isPastDay(dk) {
 
 function isFutureDay(dk) {
   return dk > dateKey(today());
+}
+
+// Prior-day tasks lock at 3:00 PM of the current day.
+// Example: Monday's tasks lock at 3 PM on Tuesday.
+// Today and future days never lock.
+function isDayLocked(dk) {
+  if (dk >= dateKey(today())) return false;        // today & future: editable
+  const deadline = dateFromKey(dk);                // midnight of that day
+  deadline.setDate(deadline.getDate() + 1);        // the next calendar day
+  deadline.setHours(15, 0, 0, 0);                  // 3:00 PM
+  return new Date() >= deadline;                   // locked once 3 PM passes
 }
 
 // ─────────────────────────────────────────
@@ -1354,6 +1379,7 @@ function setPopoverMode(mode) {
 
 function showMovePopover(type, event, index) {
   event.stopPropagation();
+  if (isDayLocked(currentDateKey)) return;
   pendingMove = { type, index };
   pendingCopy = { type, index };
   copySelections.clear();
@@ -1470,6 +1496,7 @@ function confirmCopy() {
 
 function moveTask(targetDateKey) {
   if (!pendingMove) return;
+  if (isDayLocked(currentDateKey)) return;
   const { type, index } = pendingMove;
 
   const srcData = getDayData(currentDateKey);
