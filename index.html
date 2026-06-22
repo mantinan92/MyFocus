@@ -218,6 +218,101 @@
   .card-maint .card-label { color: var(--navy); }
   .card-maint .dot { background: var(--navy); }
 
+  /* ── MAINTENANCE HABIT BUTTONS ── */
+  .habit-list { display: flex; flex-direction: column; gap: 8px; }
+  .habit-row { display: flex; align-items: stretch; gap: 6px; }
+  .habit-btn {
+    display: flex; align-items: center; gap: 10px;
+    flex: 1; min-width: 0; text-align: left;
+    padding: 11px 12px;
+    border-radius: 11px;
+    border: 1.5px solid var(--grey);
+    background: var(--white);
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.15s;
+  }
+  .habit-btn:hover:not(:disabled) { border-color: var(--navy); }
+  .habit-btn-check {
+    flex-shrink: 0; width: 22px; height: 22px;
+    border-radius: 50%; border: 1.5px solid var(--grey-mid);
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .habit-btn-check svg { display: none; }
+  .habit-row.done .habit-btn-check { background: var(--navy); border-color: var(--navy); }
+  .habit-row.done .habit-btn-check svg { display: block; }
+  .habit-btn-label {
+    flex: 1; min-width: 0; font-size: 14px; font-weight: 500; color: var(--text);
+    transition: color 0.15s;
+  }
+  .habit-row.done .habit-btn { background: var(--navy-light); border-color: var(--navy-light); }
+  .habit-row.done .habit-btn-label {
+    text-decoration: line-through; color: var(--grey-mid);
+  }
+  .habit-btn:disabled { cursor: default; opacity: 0.6; }
+
+  /* Skip button alongside each habit row */
+  .habit-skip-btn {
+    flex-shrink: 0; width: 38px;
+    border-radius: 11px; border: 1.5px solid var(--grey);
+    background: var(--white); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--grey-mid);
+    transition: all 0.15s;
+  }
+  .habit-skip-btn:hover:not(:disabled) { border-color: var(--red); color: var(--red); }
+  .habit-skip-btn.active { background: var(--text-soft); border-color: var(--text-soft); color: #fff; }
+  .habit-skip-btn:disabled { cursor: default; opacity: 0.5; }
+
+  /* Skipped row state */
+  .habit-row.skipped .habit-btn {
+    background: var(--grey); border-color: var(--grey);
+    border-style: dashed;
+  }
+  .habit-row.skipped .habit-btn-label { color: var(--text-soft); }
+  .habit-skip-tag {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--text-soft);
+    background: rgba(28,43,74,0.08);
+    border-radius: 5px; padding: 2px 6px; margin-left: 6px;
+    white-space: nowrap;
+  }
+
+  /* Per-habit weekly day dots (used in week review) */
+  .habit-week-row { margin-bottom: 12px; }
+  .habit-week-row:last-child { margin-bottom: 0; }
+  .habit-week-name {
+    font-size: 13px; font-weight: 600; color: var(--text);
+    margin-bottom: 6px;
+  }
+  .habit-week-days { display: flex; gap: 6px; }
+  .habit-day-pill {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    gap: 4px; padding: 6px 2px;
+    border-radius: 9px; background: var(--cream);
+  }
+  .habit-day-pill .hdp-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.05em;
+    text-transform: uppercase; color: var(--grey-mid);
+  }
+  .habit-day-pill .hdp-mark {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 1.5px solid var(--grey-mid);
+    display: flex; align-items: center; justify-content: center;
+    background: transparent;
+    color: var(--grey-mid);
+  }
+  .habit-day-pill.complete { background: var(--navy-light); }
+  .habit-day-pill.complete .hdp-label { color: var(--navy); }
+  .habit-day-pill.complete .hdp-mark { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .habit-day-pill .hdp-mark svg { display: none; }
+  .habit-day-pill.complete .hdp-mark svg { display: block; }
+  .habit-day-pill.skipped { background: var(--grey); }
+  .habit-day-pill.skipped .hdp-label { color: var(--text-soft); }
+  .habit-day-pill.skipped .hdp-mark { border-style: dashed; }
+  .habit-day-pill.skipped .hdp-mark svg { display: block; }
+
   /* ── TASK LIST ── */
   .task-list { display: flex; flex-direction: column; gap: 6px; }
 
@@ -428,7 +523,7 @@
 
   .stat-row-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
   .stat-mini {
@@ -517,36 +612,6 @@
     font-size: 10px; font-weight: 600;
     color: var(--grey-mid); white-space: nowrap; margin-top: 2px;
   }
-
-  /* Moved tasks */
-  .moved-list { display: flex; flex-direction: column; gap: 6px; }
-  .moved-item {
-    display: flex; align-items: flex-start;
-    gap: 8px; padding: 8px 10px;
-    background: var(--navy-light);
-    border-radius: 10px;
-  }
-  .moved-icon { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
-  .moved-item-body { flex: 1; min-width: 0; }
-  .moved-item-text {
-    font-size: 13px; font-weight: 500; color: var(--text);
-    line-height: 1.35; margin-bottom: 3px;
-  }
-  .moved-item-text.done-text {
-    text-decoration: line-through; color: var(--grey-mid);
-  }
-  .moved-meta {
-    display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
-  }
-  .moved-chip {
-    font-size: 10px; font-weight: 600;
-    letter-spacing: 0.04em;
-    padding: 2px 6px; border-radius: 5px;
-    white-space: nowrap;
-  }
-  .moved-chip.days { background: var(--navy); color: #fff; }
-  .moved-chip.done { background: var(--red-light); color: var(--red); }
-  .moved-chip.open { background: var(--grey); color: var(--text-soft); }
 
   .empty-state {
     font-size: 13px; color: var(--grey-mid);
@@ -720,7 +785,7 @@
         <span class="dot"></span>
         Maintenance
       </div>
-      <div class="task-list" id="maintList"></div>
+      <div class="habit-list" id="maintList"></div>
     </div>
 
   </main>
@@ -784,10 +849,6 @@ function dateFromKey(dk) {
   const dt = new Date(y, m-1, d);
   dt.setHours(0,0,0,0);
   return dt;
-}
-function diffDays(dkA, dkB) {
-  // number of calendar days from dkA to dkB (positive = forward)
-  return Math.round((dateFromKey(dkB) - dateFromKey(dkA)) / 86400000);
 }
 
 // Week offset: 0 = current week (containing today), -1 = last week, +1 = next, +2 = two ahead
@@ -896,28 +957,42 @@ function saveData(key, val) {
   try { localStorage.setItem('myfocus_' + key, JSON.stringify(val)); } catch {}
 }
 
+const MAINT_HABITS = [
+  { key: 'quiet',    label: 'Quiet Time' },
+  { key: 'workout',  label: 'Workout' },
+  { key: 'reading',  label: 'Reading' },
+];
+
 function emptyDay() {
   return {
-    mit:   { text: '', done: false, moves: [] },
+    mit:   { text: '', done: false },
     short: [
-      { text: '', done: false, moves: [] },
-      { text: '', done: false, moves: [] },
-      { text: '', done: false, moves: [] },
+      { text: '', done: false },
+      { text: '', done: false },
+      { text: '', done: false },
     ],
-    maint: [
-      { text: '', done: false, moves: [] },
-      { text: '', done: false, moves: [] },
-      { text: '', done: false, moves: [] },
-    ],
+    maint: { quiet: 'open', workout: 'open', reading: 'open' },
   };
 }
 
+const MAINT_STATES = ['open', 'done', 'skip'];
+
 function getDayData(dk) {
   const d = loadData('day_' + dk) || emptyDay();
-  // Migrate old data that lacks moves field
-  if (!d.mit.moves) d.mit.moves = [];
-  (d.short || []).forEach(t => { if (!t.moves) t.moves = []; });
-  (d.maint || []).forEach(t => { if (!t.moves) t.moves = []; });
+  // Migrate old data that lacks the new fields, and drop legacy move tracking.
+  if (!d.mit) d.mit = { text: '', done: false };
+  delete d.mit.moves;
+  (d.short || []).forEach(t => { delete t.moves; });
+  // Migrate legacy maintenance shapes (task-list array, or boolean-per-habit) into tri-state strings
+  if (Array.isArray(d.maint) || !d.maint) {
+    d.maint = { quiet: 'open', workout: 'open', reading: 'open' };
+  } else {
+    MAINT_HABITS.forEach(h => {
+      const v = d.maint[h.key];
+      if (typeof v === 'boolean') d.maint[h.key] = v ? 'done' : 'open';
+      else if (!MAINT_STATES.includes(v)) d.maint[h.key] = 'open';
+    });
+  }
   return d;
 }
 function setDayData(dk, data) {
@@ -973,7 +1048,7 @@ function renderDayNav(skipScroll) {
     btn.setAttribute('aria-label', `${DAY_NAMES[d.getDay()]} ${d.getDate()}${isSat ? ' (rest day)' : ''}`);
     btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     const dd = loadData('day_' + dk);
-    const hasData = !isSat && dd && (dd.mit?.text || dd.short?.some(t=>t.text) || dd.maint?.some(t=>t.text));
+    const hasData = !isSat && dd && (dd.mit?.text || dd.short?.some(t=>t.text) || (dd.maint && (Array.isArray(dd.maint) ? dd.maint.some(t=>t.text) : Object.values(dd.maint).some(Boolean))));
     if (hasData) btn.classList.add('has-tasks');
     const satLabel = isSat ? '<span class="d-rest">REST</span>' : '';
     btn.innerHTML = `<span class="d-label">${DAY_NAMES[d.getDay()]}</span><span class="d-num">${d.getDate()}</span>${satLabel}`;
@@ -1062,29 +1137,8 @@ function renderSaturdayView() {
   const fmtDate = d => `${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
   const fri = days[5];
 
-  let totalTasks = 0, doneTasks = 0;
-  const sections = {
-    mit:   { label: 'Most Important Task', dotColor: 'var(--red)',  tasks: [] },
-    short: { label: 'Shorter Tasks',       dotColor: 'var(--red)',  tasks: [] },
-    maint: { label: 'Maintenance',         dotColor: 'var(--navy)', tasks: [] },
-  };
-  days.forEach(d => {
-    const dk   = dateKey(d);
-    const data = getDayData(dk);
-    const addTask = (t, sk) => {
-      if (!t.text) return;
-      sections[sk].tasks.push({ ...t, dayKey: dk, moves: t.moves || [] });
-      totalTasks++;
-      if (t.done) doneTasks++;
-    };
-    addTask(data.mit, 'mit');
-    (data.short || []).forEach(t => addTask(t, 'short'));
-    (data.maint || []).forEach(t => addTask(t, 'maint'));
-  });
-
+  const { sections, totalTasks, doneTasks } = buildWeekSections(days);
   const overallPct = totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0;
-  let movedCount = 0;
-  Object.values(sections).forEach(s => s.tasks.forEach(t => { if (t.moves && t.moves.length > 0) movedCount++; }));
 
   satView.innerHTML = `
     <div class="saturday-hero">
@@ -1098,12 +1152,54 @@ function renderSaturdayView() {
   `;
 
   // Reuse existing week summary renderer but populate into this container
-  buildWeekSummaryInto(document.getElementById('weekContent'), days, sections, totalTasks, doneTasks, overallPct, movedCount, sunday, fri);
+  buildWeekSummaryInto(document.getElementById('weekContent'), days, sections, totalTasks, doneTasks, overallPct, sunday, fri);
 }
 
-function buildWeekSummaryInto(container, days, sections, totalTasks, doneTasks, overallPct, movedCount, monday, fri) {
+// Builds the mit/short/maint section data for a given set of day Date objects.
+// Maintenance is tracked per fixed habit (Quiet Time, Workout, Reading) rather
+// than as a free-form task list — each habit shows which days it was completed.
+function buildWeekSections(days) {
+  let totalTasks = 0, doneTasks = 0;
+  const sections = {
+    mit:   { label: 'Most Important Task', dotColor: 'var(--red)',  tasks: [] },
+    short: { label: 'Shorter Tasks',       dotColor: 'var(--red)',  tasks: [] },
+    maint: {
+      label: 'Maintenance', dotColor: 'var(--navy)',
+      habits: MAINT_HABITS.map(h => ({ key: h.key, label: h.label, doneDayKeys: [], skipDayKeys: [] })),
+    },
+  };
+  days.forEach(d => {
+    const dk   = dateKey(d);
+    const data = getDayData(dk);
+    const addTask = (t, sk) => {
+      if (!t.text) return;
+      sections[sk].tasks.push({ ...t, dayKey: dk });
+      totalTasks++;
+      if (t.done) doneTasks++;
+    };
+    addTask(data.mit, 'mit');
+    (data.short || []).forEach(t => addTask(t, 'short'));
+
+    MAINT_HABITS.forEach(h => {
+      const state = (data.maint && data.maint[h.key]) || 'open';
+      const habit = sections.maint.habits.find(x => x.key === h.key);
+      if (state === 'skip') {
+        habit.skipDayKeys.push(dk);
+        return; // excluded from totals entirely
+      }
+      totalTasks++;
+      if (state === 'done') {
+        doneTasks++;
+        habit.doneDayKeys.push(dk);
+      }
+    });
+  });
+  return { sections, totalTasks, doneTasks };
+}
+
+
+function buildWeekSummaryInto(container, days, sections, totalTasks, doneTasks, overallPct, monday, fri) {
   container.innerHTML = '';
-  const fmtDate = d => `${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
   const undone = totalTasks - doneTasks;
 
   const hero = document.createElement('div');
@@ -1121,17 +1217,70 @@ function buildWeekSummaryInto(container, days, sections, totalTasks, doneTasks, 
     <div class="stat-row-grid">
       <div class="stat-mini"><div class="stat-mini-num">${doneTasks}</div><div class="stat-mini-label">Completed</div></div>
       <div class="stat-mini"><div class="stat-mini-num">${undone}</div><div class="stat-mini-label">Open</div></div>
-      <div class="stat-mini"><div class="stat-mini-num">${movedCount}</div><div class="stat-mini-label">Moved</div></div>
     </div>
   `;
   container.appendChild(hero);
 
   Object.entries(sections).forEach(([key, sec]) => {
+    const card = document.createElement('div');
+    card.className = 'section-card';
+
+    if (key === 'maint') {
+      // Per-habit view: each fixed habit shows which days (Sun–Fri/Sat) it was completed,
+      // skipped, or left open. Skipped days are excluded from the completion totals.
+      const sTotal = sec.habits.reduce((sum, h) => sum + (days.length - h.skipDayKeys.length), 0);
+      const sDone  = sec.habits.reduce((sum, h) => sum + h.doneDayKeys.length, 0);
+      const sPct   = sTotal ? Math.round((sDone / sTotal) * 100) : 0;
+
+      let badgeClass = 'section-pct-badge';
+      if (sTotal === 0)    badgeClass += ' empty';
+      else if (sPct >= 85) badgeClass += ' pct-green';
+      else if (sPct >= 50) badgeClass += ' pct-yellow';
+      else                 badgeClass += ' pct-red';
+
+      card.innerHTML = `
+        <div class="section-card-header">
+          <div class="section-card-title"><span class="dot" style="background:${sec.dotColor}"></span>${sec.label}</div>
+          <div class="${badgeClass}">${sTotal ? sPct + '%' : '—'}</div>
+        </div>
+        <div class="section-bar-bg">
+          <div class="section-bar-fill ${sPct >= 85 ? 'bar-green' : sPct >= 50 ? 'bar-yellow' : ''}" style="width:${sPct}%"></div>
+        </div>
+        <div style="font-size:12px;color:var(--text-soft);margin-bottom:12px;">${sDone} of ${sTotal} completed</div>
+        ${sec.habits.map(h => {
+          const habitTotal = days.length - h.skipDayKeys.length;
+          return `
+          <div class="habit-week-row">
+            <div class="habit-week-name">${escapeHtml(h.label)} <span style="color:var(--grey-mid);font-weight:500;">(${h.doneDayKeys.length}/${habitTotal}${h.skipDayKeys.length ? `, ${h.skipDayKeys.length} skipped` : ''})</span></div>
+            <div class="habit-week-days">
+              ${days.map(d => {
+                const dk = dateKey(d);
+                const complete = h.doneDayKeys.includes(dk);
+                const skipped  = h.skipDayKeys.includes(dk);
+                const cls = complete ? ' complete' : skipped ? ' skipped' : '';
+                const mark = complete
+                  ? `<svg width="9" height="9" viewBox="0 0 9 9" fill="none"><polyline points="1,4.5 3.2,6.5 8,1.5" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+                  : skipped
+                  ? `<svg width="9" height="9" viewBox="0 0 9 9" fill="none"><line x1="1.8" y1="4.5" x2="7.2" y2="4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`
+                  : '';
+                return `<div class="habit-day-pill${cls}">
+                  <span class="hdp-label">${DAY_NAMES[d.getDay()]}</span>
+                  <span class="hdp-mark">${mark}</span>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>
+        `;
+        }).join('')}
+      `;
+      container.appendChild(card);
+      return;
+    }
+
     const sTotal = sec.tasks.length;
     const sDone  = sec.tasks.filter(t => t.done).length;
     const sPct   = sTotal ? Math.round((sDone / sTotal) * 100) : 0;
     const sOpen  = sec.tasks.filter(t => !t.done);
-    const sMoved = sec.tasks.filter(t => t.moves && t.moves.length > 0);
 
     let badgeClass = 'section-pct-badge';
     if (sTotal === 0)    badgeClass += ' empty';
@@ -1139,8 +1288,6 @@ function buildWeekSummaryInto(container, days, sections, totalTasks, doneTasks, 
     else if (sPct >= 50) badgeClass += ' pct-yellow';
     else                 badgeClass += ' pct-red';
 
-    const card = document.createElement('div');
-    card.className = 'section-card';
     card.innerHTML = `
       <div class="section-card-header">
         <div class="section-card-title"><span class="dot" style="background:${sec.dotColor}"></span>${sec.label}</div>
@@ -1155,19 +1302,7 @@ function buildWeekSummaryInto(container, days, sections, totalTasks, doneTasks, 
         <div class="uncomplete-list">
           ${sOpen.map(t => `<div class="uncomplete-item"><span class="uncomplete-dot"></span><div style="flex:1;min-width:0"><div style="font-size:13px;line-height:1.4">${escapeHtml(t.text)}</div><div class="uncomplete-day">${fmtDayKey(t.dayKey)}</div></div></div>`).join('')}
         </div>
-      ` : sTotal > 0 ? `<div class="sub-label">Uncompleted</div><div class="empty-state">All completed ✓</div><br>` : ''}
-      ${sMoved.length ? `
-        <div class="sub-label" style="margin-top:${sOpen.length || sTotal === 0 ? '4px' : '0'}">Moved between days</div>
-        <div class="moved-list">
-          ${sMoved.map(t => {
-            const moveCount = t.moves.length;
-            const firstFrom = t.moves[0].from;
-            const lastTo    = t.moves[t.moves.length - 1].to;
-            const span      = Math.abs(diffDays(firstFrom, lastTo));
-            return `<div class="moved-item"><div class="moved-icon">↕</div><div class="moved-item-body"><div class="moved-item-text${t.done ? ' done-text' : ''}">${escapeHtml(t.text)}</div><div class="moved-meta"><span class="moved-chip days">Moved ${moveCount}×</span>${span > 0 ? `<span class="moved-chip days" style="background:var(--navy-light);color:var(--navy)">${span} day${span!==1?'s':''} span</span>` : ''}<span class="moved-chip ${t.done ? 'done' : 'open'}">${t.done ? 'Completed' : 'Still open'}</span></div></div></div>`;
-          }).join('')}
-        </div>
-      ` : sTotal > 0 ? `<div class="sub-label">Moved between days</div><div class="empty-state">No tasks moved</div>` : `<div class="empty-state" style="margin-top:4px">No tasks this section</div>`}
+      ` : sTotal > 0 ? `<div class="sub-label">Uncompleted</div><div class="empty-state">All completed ✓</div>` : `<div class="empty-state">No tasks this section</div>`}
     `;
     container.appendChild(card);
   });
@@ -1212,7 +1347,7 @@ function renderDay() {
 
   renderMIT(data.mit);
   renderTaskList('shortList', data.short, 'short');
-  renderTaskList('maintList', data.maint, 'maint');
+  renderMaintList(data.maint);
   updateProgress();
 }
 
@@ -1267,9 +1402,65 @@ function renderTaskList(listId, tasks, type) {
   });
 }
 
-// ─────────────────────────────────────────
-// TASK MUTATIONS
-// ─────────────────────────────────────────
+function renderMaintList(maint) {
+  const list = document.getElementById('maintList');
+  list.innerHTML = '';
+  const locked = isDayLocked(currentDateKey);
+  MAINT_HABITS.forEach(h => {
+    const state = maint[h.key] || 'open'; // 'open' | 'done' | 'skip'
+
+    const row = document.createElement('div');
+    row.className = 'habit-row' + (state === 'done' ? ' done' : state === 'skip' ? ' skipped' : '');
+
+    const main = document.createElement('button');
+    main.className = 'habit-btn';
+    main.disabled = locked || state === 'skip';
+    main.setAttribute('aria-pressed', state === 'done' ? 'true' : 'false');
+    main.innerHTML = `
+      <span class="habit-btn-check"><svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+        <polyline points="1.5,5.5 4,8 9.5,2" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg></span>
+      <span class="habit-btn-label">${h.label}${state === 'skip' ? ' <span class="habit-skip-tag">Skipped</span>' : ''}</span>`;
+    main.onclick = () => toggleMaintHabit(h.key);
+
+    const skipBtn = document.createElement('button');
+    skipBtn.className = 'habit-skip-btn' + (state === 'skip' ? ' active' : '');
+    skipBtn.disabled = locked;
+    skipBtn.setAttribute('aria-label', state === 'skip' ? `Unskip ${h.label}` : `Skip ${h.label} for today`);
+    skipBtn.title = state === 'skip' ? 'Unskip' : 'Skip day';
+    skipBtn.innerHTML = state === 'skip'
+      ? `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 2.5L9.5 9.5M9.5 2.5L2.5 9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`
+      : `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 2.2V9.8M9.5 2.2V9.8M2.5 6L9.5 2.2V9.8L2.5 6Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>`;
+    skipBtn.onclick = () => skipMaintHabit(h.key);
+
+    row.appendChild(main);
+    row.appendChild(skipBtn);
+    list.appendChild(row);
+  });
+}
+
+function toggleMaintHabit(key) {
+  if (isDayLocked(currentDateKey)) return;
+  const data = getDayData(currentDateKey);
+  if (data.maint[key] === 'skip') return; // must unskip first
+  data.maint[key] = data.maint[key] === 'done' ? 'open' : 'done';
+  setDayData(currentDateKey, data);
+  renderMaintList(data.maint);
+  updateProgress();
+  renderDayNav(true);
+}
+
+function skipMaintHabit(key) {
+  if (isDayLocked(currentDateKey)) return;
+  const data = getDayData(currentDateKey);
+  data.maint[key] = data.maint[key] === 'skip' ? 'open' : 'skip';
+  setDayData(currentDateKey, data);
+  renderMaintList(data.maint);
+  updateProgress();
+  renderDayNav(true);
+}
+
+
 function toggleMIT() {
   if (isDayLocked(currentDateKey)) return;
   const data = getDayData(currentDateKey);
@@ -1294,7 +1485,7 @@ function toggleTask(type, index) {
   if (!data[type][index].text.trim()) return;
   data[type][index].done = !data[type][index].done;
   setDayData(currentDateKey, data);
-  renderTaskList(type === 'short' ? 'shortList' : 'maintList', data[type], type);
+  renderTaskList('shortList', data[type], type);
   updateProgress();
 }
 
@@ -1350,7 +1541,11 @@ function updateProgress() {
   const all = [
     data.mit.text ? data.mit.done : null,
     ...data.short.map(t => t.text ? t.done : null),
-    ...data.maint.map(t => t.text ? t.done : null),
+    ...MAINT_HABITS.map(h => {
+      const state = data.maint[h.key];
+      if (state === 'skip') return null;   // excluded entirely
+      return state === 'done';             // true or false
+    }),
   ].filter(v => v !== null);
 
   const total = all.length;
@@ -1470,10 +1665,9 @@ function confirmCopy() {
 
   copySelections.forEach(targetDk => {
     const dstData = getDayData(targetDk);
-    const copyRecord = { from: currentDateKey, to: targetDk, action: 'copy' };
 
     if (type === 'mit') {
-      const task = { ...srcData.mit, moves: [...(srcData.mit.moves||[]), copyRecord], done: false };
+      const task = { ...srcData.mit, done: false };
       if (!dstData.mit.text) {
         dstData.mit = task;
       } else {
@@ -1481,7 +1675,7 @@ function confirmCopy() {
         if (slot >= 0) dstData.short[slot] = task;
       }
     } else {
-      const task = { ...srcData[type][index], moves: [...(srcData[type][index].moves||[]), copyRecord], done: false };
+      const task = { ...srcData[type][index], done: false };
       const slot = dstData[type].findIndex(t => !t.text);
       if (slot >= 0) dstData[type][slot] = task;
       else           dstData[type][0]    = task;
@@ -1502,11 +1696,9 @@ function moveTask(targetDateKey) {
   const srcData = getDayData(currentDateKey);
   const dstData = getDayData(targetDateKey);
 
-  const moveRecord = { from: currentDateKey, to: targetDateKey };
-
   if (type === 'mit') {
-    const task = { ...srcData.mit, moves: [...(srcData.mit.moves||[]), moveRecord] };
-    srcData.mit = { text: '', done: false, moves: [] };
+    const task = { ...srcData.mit };
+    srcData.mit = { text: '', done: false };
     if (dstData.mit.text) {
       const slot = dstData.short.findIndex(t => !t.text);
       if (slot >= 0) dstData.short[slot] = { ...task, done: false };
@@ -1514,8 +1706,8 @@ function moveTask(targetDateKey) {
       dstData.mit = { ...task, done: false };
     }
   } else {
-    const task = { ...srcData[type][index], moves: [...(srcData[type][index].moves||[]), moveRecord] };
-    srcData[type][index] = { text: '', done: false, moves: [] };
+    const task = { ...srcData[type][index] };
+    srcData[type][index] = { text: '', done: false };
     const slot = dstData[type].findIndex(t => !t.text);
     if (slot >= 0) dstData[type][slot] = { ...task, done: false };
     else           dstData[type][0]    = { ...task, done: false };
@@ -1555,31 +1747,10 @@ function renderWeekSummary() {
   `;
   container.appendChild(sel);
 
-  let totalTasks = 0, doneTasks = 0;
-  const sections = {
-    mit:   { label: 'Most Important Task', dotColor: 'var(--red)',  tasks: [] },
-    short: { label: 'Shorter Tasks',       dotColor: 'var(--red)',  tasks: [] },
-    maint: { label: 'Maintenance',         dotColor: 'var(--navy)', tasks: [] },
-  };
-  days.forEach(d => {
-    const dk   = dateKey(d);
-    const data = getDayData(dk);
-    const addTask = (t, sk) => {
-      if (!t.text) return;
-      sections[sk].tasks.push({ ...t, dayKey: dk, moves: t.moves || [] });
-      totalTasks++;
-      if (t.done) doneTasks++;
-    };
-    addTask(data.mit, 'mit');
-    (data.short || []).forEach(t => addTask(t, 'short'));
-    (data.maint || []).forEach(t => addTask(t, 'maint'));
-  });
-
+  const { sections, totalTasks, doneTasks } = buildWeekSections(days);
   const overallPct = totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0;
-  let movedCount = 0;
-  Object.values(sections).forEach(s => s.tasks.forEach(t => { if (t.moves && t.moves.length > 0) movedCount++; }));
 
-  buildWeekSummaryInto(container, days, sections, totalTasks, doneTasks, overallPct, movedCount, monday, sunday);
+  buildWeekSummaryInto(container, days, sections, totalTasks, doneTasks, overallPct, monday, sunday);
 }
 
 function changeWeek(delta) {
